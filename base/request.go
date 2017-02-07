@@ -9,19 +9,20 @@ type Request struct {
 }
 
 func NewRequest(httpReq *http.Request, depth uint) *Request {
-	return &Request{httpReq:httpReq, depth:depth}
+	return &Request{httpReq: httpReq, depth: depth}
 }
 
 //获取HTTP请求
-func (req *Request)HttpReq() *http.Request {
+func (req *Request) HttpReq() *http.Request {
 	return req.httpReq
 }
+
 //获取深度值
-func (req *Request)Depth() uint {
+func (req *Request) Depth() uint {
 	return req.depth
 }
 
 //数据是否有效
-func (req *Request)Valid()bool{
-	return req.httpReq!=nil&&req.httpReq.URL!=nil
+func (req *Request) Valid() bool {
+	return req.httpReq != nil && req.httpReq.URL != nil
 }

@@ -24,24 +24,24 @@ func NewCrawlerError(errType ErrorType, errMsg string) CrawlerError {
 	return myCrawlerError{errType: errType, errMsg: errMsg}
 }
 
-func (ce *myCrawlerError)Type()ErrorType{
+func (ce *myCrawlerError) Type() ErrorType {
 	return ce.errType
 }
 
-func (ce *myCrawlerError)Error()string{
-	if ce.fullErrMsg==""{
+func (ce *myCrawlerError) Error() string {
+	if ce.fullErrMsg == "" {
 		ce.genFullErrMsg()
 	}
 	return ce.fullErrMsg
 }
 
 //生成错误信息，并给相应的字段复制
-func (ce *myCrawlerError)genFullErrMsg(){
+func (ce *myCrawlerError) genFullErrMsg() {
 	var buffer bytes.Buffer
 	buffer.WriteString("Crawler Error: ")
-	if ce.errType!=""{
-		buffer.WriteString(string(ce.errType)+": ")
+	if ce.errType != "" {
+		buffer.WriteString(string(ce.errType) + ": ")
 	}
 	buffer.WriteString(ce.errMsg)
-	ce.fullErrMsg=fmt.Sprintf("%s\n",buffer.String())
+	ce.fullErrMsg = fmt.Sprintf("%s\n", buffer.String())
 }
