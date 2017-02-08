@@ -8,8 +8,8 @@ type Response struct {
 	depth    uint32
 }
 
-func NewResponse(httpResp *http.Response, depth uint) *Response {
-	return &Request{httpReq: httpResp, depth: depth}
+func NewResponse(httpResp *http.Response, depth uint32) *Response {
+	return &Response{httpResp: httpResp, depth: depth}
 }
 
 //获取HTTP请求
@@ -18,7 +18,7 @@ func (resp *Response) HttpReq() *http.Response {
 }
 
 //获取深度值
-func (resp *Response) Depth() uint {
+func (resp *Response) Depth() uint32{
 	return resp.depth
 }
 

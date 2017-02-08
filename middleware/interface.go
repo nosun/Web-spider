@@ -34,10 +34,11 @@ type ChannelManager interface {
 //实体池 todo 泛类型？
 type Pool interface {
 	Take() (Entity, error)
-	Return(inter Entity) error
+	Return(entity Entity) error
 	Total() uint32
 	Used() uint32
 }
+
 
 //停止信号
 type StopSign interface {

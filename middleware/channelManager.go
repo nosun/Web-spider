@@ -12,8 +12,8 @@ type ChannelManagerStatus uint8
 
 const (
 	CHANNEL_MANAGER_STATUS_UNINITIALIZED ChannelManagerStatus = 0 //未初始化
-	CHANNEL_MANAGER_STATUS_INITIALIZED   ChannelManagerStatus = 1 //已初始化
-	CHANNEL_MANAGER_STATUS_CLOSED        ChannelManagerStatus = 2 //已关闭
+	CHANNEL_MANAGER_STATUS_INITIALIZED ChannelManagerStatus = 1 //已初始化
+	CHANNEL_MANAGER_STATUS_CLOSED ChannelManagerStatus = 2 //已关闭
 )
 
 var statusNameMap = map[ChannelManagerStatus]string{
@@ -29,7 +29,7 @@ var chanmanSummaryTemplate = "status" +
 	"itemChannel" +
 	"errorChannel"
 
-var defaultChanlen = 10
+const defaultChanlen uint = 10
 
 type myChannelManager struct {
 	channelLen uint
@@ -123,11 +123,15 @@ func (chanman *myChannelManager) ErrChan() (chan error, error) {
 }
 
 func (chanman *myChannelManager) ChannelLen() uint {
+	chanman.rwmutex.Lock()
+	defer chanman.rwmutex.Unlock()
 	return chanman.channelLen
 }
 
 //管理器状态
 func (chanman *myChannelManager) Status() ChannelManagerStatus {
+	chanman.rwmutex.Lock()
+	defer chanman.rwmutex.Unlock()
 	return chanman.status
 }
 

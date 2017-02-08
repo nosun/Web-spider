@@ -9,8 +9,8 @@ type ErrorType string
 
 //错误类型常量
 const (
-	DOWNLOADER_ERROR     ErrorType = "Downloader Error"
-	ANAYZER_ERROR        ErrorType = "Analyzer Error"
+	DOWNLOADER_ERROR ErrorType = "Downloader Error"
+	ANAYZER_ERROR ErrorType = "Analyzer Error"
 	ITEM_PROCESSOR_ERROR ErrorType = "Item Processor Error"
 )
 
@@ -21,7 +21,7 @@ type myCrawlerError struct {
 }
 
 func NewCrawlerError(errType ErrorType, errMsg string) CrawlerError {
-	return myCrawlerError{errType: errType, errMsg: errMsg}
+	return &myCrawlerError{errType: errType, errMsg: errMsg}
 }
 
 func (ce *myCrawlerError) Type() ErrorType {

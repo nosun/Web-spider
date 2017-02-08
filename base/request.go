@@ -8,7 +8,7 @@ type Request struct {
 	depth   uint32        //请求的深度
 }
 
-func NewRequest(httpReq *http.Request, depth uint) *Request {
+func NewRequest(httpReq *http.Request, depth uint32) *Request {
 	return &Request{httpReq: httpReq, depth: depth}
 }
 
@@ -18,7 +18,7 @@ func (req *Request) HttpReq() *http.Request {
 }
 
 //获取深度值
-func (req *Request) Depth() uint {
+func (req *Request) Depth() uint32 {
 	return req.depth
 }
 
