@@ -27,7 +27,7 @@ type ChannelManager interface {
 	ChannelLen() uint
 	//管理器状态
 	Status() ChannelManagerStatus
-	//摘要星系
+	//摘要信息
 	Summary() string
 }
 
