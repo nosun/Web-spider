@@ -12,8 +12,8 @@ type ChannelManagerStatus uint8
 
 const (
 	CHANNEL_MANAGER_STATUS_UNINITIALIZED ChannelManagerStatus = 0 //未初始化
-	CHANNEL_MANAGER_STATUS_INITIALIZED ChannelManagerStatus = 1 //已初始化
-	CHANNEL_MANAGER_STATUS_CLOSED ChannelManagerStatus = 2 //已关闭
+	CHANNEL_MANAGER_STATUS_INITIALIZED   ChannelManagerStatus = 1 //已初始化
+	CHANNEL_MANAGER_STATUS_CLOSED        ChannelManagerStatus = 2 //已关闭
 )
 
 var statusNameMap = map[ChannelManagerStatus]string{

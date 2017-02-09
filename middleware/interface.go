@@ -39,7 +39,6 @@ type Pool interface {
 	Used() uint32
 }
 
-
 //停止信号
 type StopSign interface {
 	//发出停止型号，如果已经发出，返回false

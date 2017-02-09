@@ -1,9 +1,9 @@
 package middleware
 
 import (
-	"reflect"
-	"fmt"
 	"errors"
+	"fmt"
+	"reflect"
 	"sync"
 )
 
@@ -36,11 +36,12 @@ func NewPool(total uint32, entityType reflect.Type, genEntity func() Entity) (Po
 		idContainer[newEntity.ID()] = true
 	}
 
-	return &myPool{total:total, etype:entityType, genEntity:genEntity, container:container, idContainer:idContainer}, nil
+	return &myPool{total: total, etype: entityType, genEntity: genEntity, container: container, idContainer: idContainer}, nil
 }
 
-func (mp *myPool)Take() (Entity, error) {
-	entity, ok := <-mp.container; if !ok {
+func (mp *myPool) Take() (Entity, error) {
+	entity, ok := <-mp.container
+	if !ok {
 		return nil, errors.New("The inner container is invalid!")
 	}
 	mp.mutex.Lock()
@@ -49,7 +50,7 @@ func (mp *myPool)Take() (Entity, error) {
 	return entity, nil
 }
 
-func (mp *myPool)Return(entity Entity) error {
+func (mp *myPool) Return(entity Entity) error {
 	if entity == nil {
 		return errors.New("The returning entity is invalid")
 	}
@@ -67,11 +68,11 @@ func (mp *myPool)Return(entity Entity) error {
 	}
 }
 
-func (mp*myPool)Total() uint32 {
+func (mp *myPool) Total() uint32 {
 	return mp.total
 }
 
-func (mp*myPool)Used() uint32 {
+func (mp *myPool) Used() uint32 {
 	return uint32(len(mp.idContainer))
 }
 
@@ -79,7 +80,7 @@ func (mp*myPool)Used() uint32 {
 //结果值： -1 表示键值对不存在
 //	   0 表示操作失败
 //	   1 表示操作成功
-func (mp *myPool)compareAndSetForIdContainer(entityID uint32, newValue bool) int8 {
+func (mp *myPool) compareAndSetForIdContainer(entityID uint32, newValue bool) int8 {
 	mp.mutex.Lock()
 	defer mp.mutex.Unlock()
 	v, ok := mp.idContainer[entityID]
@@ -92,4 +93,3 @@ func (mp *myPool)compareAndSetForIdContainer(entityID uint32, newValue bool) int
 	mp.idContainer[entityID] = newValue
 	return 1
 }
-
