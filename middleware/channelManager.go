@@ -123,15 +123,11 @@ func (chanman *myChannelManager) ErrChan() (chan error, error) {
 }
 
 func (chanman *myChannelManager) ChannelLen() uint {
-	chanman.rwmutex.Lock()
-	defer chanman.rwmutex.Unlock()
 	return chanman.channelLen
 }
 
 //管理器状态
 func (chanman *myChannelManager) Status() ChannelManagerStatus {
-	chanman.rwmutex.Lock()
-	defer chanman.rwmutex.Unlock()
 	return chanman.status
 }
 
