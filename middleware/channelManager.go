@@ -1,8 +1,8 @@
 package middleware
 
 import (
+	"errors"
 	"fmt"
-	"github.com/pkg/errors"
 	"github.com/yanchenxu/Web-spider/base"
 	"sync"
 )
