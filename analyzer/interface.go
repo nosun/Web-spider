@@ -3,8 +3,8 @@ package analyzer
 import "github.com/yanchenxu/Web-spider/base"
 
 type Analyzer interface {
-	Id() uint32
-	Anzlyze(respParsers []ParseResponse, resp base.Response) ([]base.Data, []error)
+	ID() uint32
+	Analyzer(respParsers []ParseResponse, resp base.Response) (dataList []base.Data, errorList[]error)
 }
 
 type AnalyzerPool interface {
