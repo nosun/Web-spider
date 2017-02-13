@@ -9,8 +9,8 @@ type ErrorType string
 
 //错误类型常量
 const (
-	DOWNLOADER_ERROR ErrorType = "Downloader Error"
-	ANAYZER_ERROR ErrorType = "Analyzer Error"
+	DOWNLOADER_ERROR     ErrorType = "Downloader Error"
+	ANAYZER_ERROR        ErrorType = "Analyzer Error"
 	ITEM_PROCESSOR_ERROR ErrorType = "Item Processor Error"
 )
 

@@ -4,7 +4,7 @@ import "github.com/yanchenxu/Web-spider/base"
 
 type Analyzer interface {
 	ID() uint32
-	Analyzer(respParsers []ParseResponse, resp base.Response) (dataList []base.Data, errorList[]error)
+	Analyzer(respParsers []ParseResponse, resp base.Response) (dataList []base.Data, errorList []error)
 }
 
 type AnalyzerPool interface {

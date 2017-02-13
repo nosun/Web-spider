@@ -18,7 +18,7 @@ func (resp *Response) HttpReq() *http.Response {
 }
 
 //获取深度值
-func (resp *Response) Depth() uint32{
+func (resp *Response) Depth() uint32 {
 	return resp.depth
 }
 

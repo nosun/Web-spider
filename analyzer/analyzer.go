@@ -1,12 +1,12 @@
 package analyzer
 
 import (
+	"errors"
+	"fmt"
 	"github.com/yanchenxu/Web-spider/base"
 	"github.com/yanchenxu/Web-spider/middleware"
 	"net/http"
-	"errors"
 	"net/url"
-	"fmt"
 )
 
 //被用于解析HTTP响应的函数类型
@@ -19,14 +19,14 @@ type myAnalyzer struct {
 }
 
 func NewAnalyzer() Analyzer {
-	return &myAnalyzer{id:genAnalyzerIDGenertor.GetUint32()}
+	return &myAnalyzer{id: genAnalyzerIDGenertor.GetUint32()}
 }
 
-func (analyzer *myAnalyzer)ID() uint32 {
+func (analyzer *myAnalyzer) ID() uint32 {
 	return analyzer.id
 }
 
-func (Analyzer *myAnalyzer)Analyzer(respParsers []ParseResponse, resp base.Response) (dataList []base.Data, errorList[]error) {
+func (Analyzer *myAnalyzer) Analyzer(respParsers []ParseResponse, resp base.Response) (dataList []base.Data, errorList []error) {
 	if respParsers == nil {
 		return nil, []error{errors.New("The response parser list id invalid!")}
 	}

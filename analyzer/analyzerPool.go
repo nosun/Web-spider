@@ -1,9 +1,9 @@
 package analyzer
 
 import (
+	"fmt"
 	"github.com/yanchenxu/Web-spider/middleware"
 	"reflect"
-	"fmt"
 )
 
 type myAnalyzerPool struct {
@@ -24,10 +24,10 @@ func NewAnalyzerPool(total uint32, gen genAnalyzer) (AnalyzerPool, error) {
 		return nil, err
 	}
 
-	return &myAnalyzerPool{pool:pool, etype:etype}, nil
+	return &myAnalyzerPool{pool: pool, etype: etype}, nil
 }
 
-func (aPool *myAnalyzerPool)Take() (Analyzer, error) {
+func (aPool *myAnalyzerPool) Take() (Analyzer, error) {
 	entity, err := aPool.pool.Take()
 	if err != nil {
 		return nil, err
@@ -40,14 +40,14 @@ func (aPool *myAnalyzerPool)Take() (Analyzer, error) {
 	return analyzer, nil
 }
 
-func (aPool *myAnalyzerPool)Return(ananlyzer Analyzer) error {
+func (aPool *myAnalyzerPool) Return(ananlyzer Analyzer) error {
 	return aPool.pool.Return(ananlyzer)
 }
 
-func (aPool *myAnalyzerPool)Total() uint32 {
+func (aPool *myAnalyzerPool) Total() uint32 {
 	return aPool.pool.Total()
 }
 
-func (aPool *myAnalyzerPool)Used() uint32 {
+func (aPool *myAnalyzerPool) Used() uint32 {
 	return aPool.pool.Used()
 }
