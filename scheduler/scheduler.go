@@ -1,14 +1,16 @@
 package scheduler
 
 import (
-	"net/http"
-	"github.com/yanchenxu/Web-spider/middleware"
-	"github.com/yanchenxu/Web-spider/itemProcessor"
+	"errors"
+	"fmt"
+	"github.com/yanchenxu/Web-spider/analyzer"
 	"github.com/yanchenxu/Web-spider/base"
 	"github.com/yanchenxu/Web-spider/downloader"
-	"github.com/yanchenxu/Web-spider/analyzer"
-	"fmt"
-	"errors"
+	"github.com/yanchenxu/Web-spider/itemProcessor"
+	"github.com/yanchenxu/Web-spider/middleware"
+	"log"
+	"net/http"
+	"strings"
 	"sync/atomic"
 	"time"
 )
@@ -16,42 +18,46 @@ import (
 type GenHttpClient func() *http.Client
 
 type myScheduler struct {
-	poolSize      uint32                        //池的尺寸
-	channelLen    uint                          //通道的总长度
-	crawlDepth    uint32                        //爬取最大深度
-	primaryDomain string                        //主域名
+	poolSize      uint32 //池的尺寸
+	channelLen    uint   //通道的总长度
+	crawlDepth    uint32 //爬取最大深度
+	primaryDomain string //主域名
 
-	chanman       middleware.ChannelManager     //通道管理器
-	stopSign      middleware.StopSign           //停止信号
-	dlpool        Downloader.PageDownloaderPool //网页下载池
-	analyzerPool  analyzer.AnalyzerPool         //分析池
-	itemPipeline  ItemProcessor.ItemPipeline    //条目处理管道
+	chanman      middleware.ChannelManager     //通道管理器
+	stopSign     middleware.StopSign           //停止信号
+	dlpool       Downloader.PageDownloaderPool //网页下载池
+	analyzerPool analyzer.AnalyzerPool         //分析池
+	itemPipeline ItemProcessor.ItemPipeline    //条目处理管道
 
-	running       uint32                        //运行标记，0运行，1已运行，2停止
+	running uint32 //运行标记，0运行，1已运行，2停止
 
-	reqCache      requestCache                  //请求缓存
+	reqCache requestCache //请求缓存
 
-	urlMap        map[string]bool               //已请求的URL的字典
+	urlMap map[string]bool //已请求的URL的字典
 }
 
 const (
-	DOWNLOADER_CODE = "downloader"
-	ANALYZER_CODE = "analyzer"
+	DOWNLOADER_CODE   = "downloader"
+	ANALYZER_CODE     = "analyzer"
 	ITEMPIPELINE_CODE = "item_PIPELINE"
-	SCHEDULER_CODE = "scheduler"
+	SCHEDULER_CODE    = "scheduler"
 )
 
 func NewScheduler() scheduler {
 	return &myScheduler{}
 }
 
-func (sched *myScheduler)Start(channelLen uint, //指定数据传输通道长度
-poolSize uint32, //设定池的容量
-crawlDepth uint32, //爬取深度
-httpClientGenerator GenHttpClient, //生成行的HTTP客户端
-respParsers []analyzer.ParseResponse, //解析HTTP响应
-itemProcessors []ItemProcessor.ProcessItem, //条目处理序列
-firstHttpReq *http.Request) (err error) {
+func NewSchedSummary(sched *myScheduler, prefix string) SchedSummary {
+	return nil
+}
+
+func (sched *myScheduler) Start(channelLen uint, //指定数据传输通道长度
+	poolSize uint32, //设定池的容量
+	crawlDepth uint32, //爬取深度
+	httpClientGenerator GenHttpClient, //生成行的HTTP客户端
+	respParsers []analyzer.ParseResponse, //解析HTTP响应
+	itemProcessors []ItemProcessor.ProcessItem, //条目处理序列
+	firstHttpReq *http.Request) (err error) {
 
 	defer func() {
 		if p := recover(); p != nil {
@@ -60,7 +66,7 @@ firstHttpReq *http.Request) (err error) {
 		}
 	}()
 
-	if atomic.LoadUint32(sched.running) == 1 {
+	if atomic.LoadUint32(&sched.running) == 1 {
 		return errors.New("The scheduler has been started!\n")
 	}
 
@@ -133,17 +139,21 @@ firstHttpReq *http.Request) (err error) {
 	return nil
 }
 
-func (sched *myScheduler)startDownloading() {
+//startDownloading
+func (sched *myScheduler) startDownloading() {
 	go func() {
-		req, ok := <-sched.getReqChan()
-		if !ok {
-			break
+		for {
+			req, ok := <-sched.getReqChan()
+			if !ok {
+				break
+			}
+			go sched.download(req)
 		}
-		go sched.download(req)
+
 	}()
 }
 
-func (sched *myScheduler)download(req base.Request) {
+func (sched *myScheduler) download(req base.Request) {
 	defer func() {
 		if p := recover(); p != nil {
 			fmt.Printf("FATAL DOwnload Error: %s\n", p)
@@ -175,7 +185,197 @@ func (sched *myScheduler)download(req base.Request) {
 
 }
 
-func (sched *myScheduler)sendResp(resp base.Request, code string) bool {
+//activateAnalyzers
+func (sched *myScheduler) activateAnalyzers(respParsers []analyzer.ParseResponse) {
+	go func() {
+		for {
+			resp, ok := <-sched.getRespChan()
+			if !ok {
+				break
+			}
+			go sched.analyze(respParsers, resp)
+		}
+	}()
+}
+
+func (sched *myScheduler) analyze(respParsers []analyzer.ParseResponse, resp base.Response) {
+	defer func() {
+		if p := recover(); p != nil {
+			log.Fatalf("Fatal Analysis Error: %s\n", p)
+		}
+	}()
+
+	analyzer, err := sched.analyzerPool.Take()
+	if err != nil {
+		sched.sendError(fmt.Errorf("Analyuzer pool error: %s\n", err), SCHEDULER_CODE)
+		return
+	}
+
+	defer func() {
+		err := sched.analyzerPool.Return(analyzer)
+		if err != nil {
+			sched.sendError(fmt.Errorf("Analyuzer pool error: %s\n", err), SCHEDULER_CODE)
+		}
+	}()
+
+	code := generateCode(ANALYZER_CODE, analyzer.ID())
+	datalist, errs := analyzer.Analyzer(respParsers, resp)
+
+	if datalist != nil {
+		for _, data := range datalist {
+			if data == nil {
+				continue
+			}
+			switch d := data.(type) {
+			case *base.Request:
+				sched.saveReqToCache(*d, code)
+			case *base.Item:
+				sched.sendItem(*d, code)
+			default:
+				sched.sendError(fmt.Errorf("Unsupported data type '%T'!(value=%v)\n", d, d), code)
+			}
+		}
+	}
+
+	if errs != nil {
+		for _, err := range errs {
+			if err != nil {
+				sched.sendError(err, code)
+			}
+		}
+	}
+
+}
+
+func (sched *myScheduler) saveReqToCache(req base.Request, code string) bool {
+	httpReq := req.HttpReq()
+	if httpReq == nil {
+		log.Fatalln("WARN:Ignore the request! It's HTTP request is Iinvalid!")
+		return false
+	}
+	reqUrl := httpReq.URL
+	if reqUrl == nil {
+		log.Fatalln("WARN:Ignore the request! It's url is invalid!")
+		return false
+	}
+	if strings.ToLower(httpReq.URL.Scheme) != "http" {
+		log.Fatalf("WARN:Iggnore the request! It's url scheme '%s',but should be 'http'!\n", reqUrl.Scheme)
+		return false
+	}
+
+	if _, ok := sched.urlMap[reqUrl.String()]; ok {
+		log.Fatalf("WARN:Ignore teh request! It's url is repeated.(requestUrl=%s)\n", reqUrl)
+		return false
+	}
+
+	if pd, _ := getPrimaryDomain(httpReq.Host); pd != sched.primaryDomain {
+		log.Fatalf("WARN:Ignore the request It's host '%s' not in primary domain '%s',(requestUrl=%s)\n", httpReq.Host, sched.primaryDomain, reqUrl)
+		return false
+	}
+
+	if req.Depth() > sched.crawlDepth {
+		log.Fatalf("WARN:Ignore the request! It's depth %d greater than %d.(requestUrl=%s)\n", req.Depth(), sched.crawlDepth, reqUrl)
+		return false
+	}
+
+	if sched.stopSign.Signed() {
+		sched.stopSign.Deal(code)
+		return false
+	}
+
+	sched.reqCache.put(&req)
+
+	sched.urlMap[reqUrl.String()] = true
+	return true
+}
+
+//openItemPipeline
+func (sched *myScheduler) openItemPipeline() {
+	go func() {
+		sched.itemPipeline.SetFailFast(true)
+		code := ITEMPIPELINE_CODE
+		for item := range sched.getItemChan() {
+			go func(item base.Item) {
+				defer func() {
+					if p := recover(); p != nil {
+						log.Fatal(fmt.Errorf("Fatal Item Processing Error: %s\n", p))
+					}
+				}()
+				errs := sched.itemPipeline.Send(item)
+				if errs != nil {
+					for _, err := range errs {
+						sched.sendError(err, code)
+					}
+				}
+			}(item)
+		}
+	}()
+}
+
+//schedule
+func (sched *myScheduler) schedule(interval time.Duration) {
+	go func() {
+		for {
+			if sched.stopSign.Signed() {
+				sched.stopSign.Deal(SCHEDULER_CODE)
+				return
+			}
+			remainder := cap(sched.getReqChan()) - len(sched.getReqChan())
+			var temp *base.Request
+			for remainder > 0 {
+				temp = sched.reqCache.get()
+				if temp == nil {
+					break
+				}
+				if sched.stopSign.Signed() {
+					sched.stopSign.Deal(SCHEDULER_CODE)
+					return
+				}
+				sched.getReqChan() <- *temp
+				remainder--
+			}
+			time.Sleep(interval)
+		}
+	}()
+}
+
+func (sched *myScheduler) Stop() bool {
+	if atomic.LoadUint32(&sched.running) != 1 {
+		return false
+	}
+	sched.stopSign.Sign()
+	sched.chanman.Close()
+	sched.reqCache.close()
+	atomic.StoreUint32(&sched.running, 2)
+	return true
+}
+
+func (sched *myScheduler) Running() bool {
+	return atomic.LoadUint32(&sched.running) == 1
+}
+
+func (sched *myScheduler) ErrorChan() <-chan error {
+	if sched.chanman.Status() != middleware.CHANNEL_MANAGER_STATUS_INITIALIZED {
+		return nil
+	}
+	return sched.getErrorChan()
+}
+
+func (sched *myScheduler) Idle() bool {
+	idleDlPool := sched.dlpool.Used() == 0
+	idleAnalyzerPool := sched.analyzerPool.Used() == 0
+	idleItemPipeline := sched.itemPipeline.ProcessingNumber() == 0
+	if idleDlPool && idleAnalyzerPool && idleItemPipeline {
+		return true
+	}
+	return false
+}
+
+func (sched *myScheduler) Summary(prefix string) SchedSummary {
+	return NewSchedSummary(sched, prefix)
+}
+
+func (sched *myScheduler) sendResp(resp base.Response, code string) bool {
 	if sched.stopSign.Signed() {
 		sched.stopSign.Deal(code)
 		return false
@@ -185,7 +385,17 @@ func (sched *myScheduler)sendResp(resp base.Request, code string) bool {
 	return true
 }
 
-func (sched *myScheduler)sendError(err error, code string) bool {
+func (sched *myScheduler) sendItem(item base.Item, code string) bool {
+	if sched.stopSign.Signed() {
+		sched.stopSign.Deal(code)
+		return false
+	}
+
+	sched.getItemChan() <- item
+	return true
+}
+
+func (sched *myScheduler) sendError(err error, code string) bool {
 	if err == nil {
 		return false
 	}
@@ -212,7 +422,7 @@ func (sched *myScheduler)sendError(err error, code string) bool {
 	return true
 }
 
-func (sched *myScheduler)getReqChan() chan base.Request {
+func (sched *myScheduler) getReqChan() chan base.Request {
 	reqChan, err := sched.chanman.ReqChan()
 	if err != nil {
 		panic(err)
@@ -220,7 +430,7 @@ func (sched *myScheduler)getReqChan() chan base.Request {
 	return reqChan
 }
 
-func (sched *myScheduler)getRespChan() chan base.Response {
+func (sched *myScheduler) getRespChan() chan base.Response {
 	respChan, err := sched.chanman.RespChan()
 	if err != nil {
 		panic(err)
@@ -228,7 +438,7 @@ func (sched *myScheduler)getRespChan() chan base.Response {
 	return respChan
 }
 
-func (sched *myScheduler)getErrorChan() chan base.CrawlerError {
+func (sched *myScheduler) getErrorChan() chan error {
 	errChan, err := sched.chanman.ErrChan()
 	if err != nil {
 		panic(err)
@@ -236,7 +446,7 @@ func (sched *myScheduler)getErrorChan() chan base.CrawlerError {
 	return errChan
 }
 
-func (sched *myScheduler)getItemChan() chan base.Item {
+func (sched *myScheduler) getItemChan() chan base.Item {
 	itemChan, err := sched.chanman.ItemChan()
 	if err != nil {
 		panic(err)

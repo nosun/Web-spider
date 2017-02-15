@@ -1,15 +1,14 @@
 package scheduler
 
 import (
-	"github.com/yanchenxu/Web-spider/middleware"
-	"github.com/yanchenxu/Web-spider/itemProcessor"
-	"github.com/yanchenxu/Web-spider/downloader"
-	"github.com/yanchenxu/Web-spider/analyzer"
-	"net/http"
 	"errors"
-	"strings"
-	"regexp"
 	"fmt"
+	"github.com/yanchenxu/Web-spider/analyzer"
+	"github.com/yanchenxu/Web-spider/downloader"
+	"github.com/yanchenxu/Web-spider/itemProcessor"
+	"github.com/yanchenxu/Web-spider/middleware"
+	"regexp"
+	"strings"
 )
 
 func generateChannelManager(chnnellen uint) middleware.ChannelManager {
@@ -17,11 +16,13 @@ func generateChannelManager(chnnellen uint) middleware.ChannelManager {
 }
 
 func generatePageDownloaderPool(poolSize uint32, genClient GenHttpClient) (Downloader.PageDownloaderPool, error) {
-	return Downloader.NewPageDownloaderPool(poolSize, Downloader.NewDownloder(genClient()))
+	return Downloader.NewPageDownloaderPool(poolSize, func() Downloader.PageDownloader {
+		return Downloader.NewDownloder(genClient())
+	})
 }
 
 func generateAnalyzerPool(poolSize uint32) (analyzer.AnalyzerPool, error) {
-	return analyzer.NewAnalyzerPool(poolSize, analyzer.NewAnalyzer())
+	return analyzer.NewAnalyzerPool(poolSize, analyzer.NewAnalyzer)
 }
 
 func generateItemPipeline(itemProcessors []ItemProcessor.ProcessItem) ItemProcessor.ItemPipeline {
@@ -32,11 +33,23 @@ func generateCode(prefix string, id uint32) string {
 	return fmt.Sprintf("%s-%d", prefix, id)
 }
 
-func parseCode(code string)[]string{
-	result:=make([]string,2)
+func parseCode(code string) []string {
+	result := make([]string, 2)
 	var codePrefix string
 	var id string
+
+	index := strings.Index(code, "-")
+	if index > 0 {
+		codePrefix = code[:index]
+		id = code[index+1:]
+	} else {
+		codePrefix = code
+	}
+	result[0] = codePrefix
+	result[1] = id
+	return result
 }
+
 //匹配ip地址的正则
 var regexpForIp = regexp.MustCompile(`((?:(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d?\d))`)
 
@@ -85,7 +98,7 @@ func getPrimaryDomain(host string) (string, error) {
 		firstPart := host[:surfixIndex]
 		index := strings.LastIndex(firstPart, ".")
 		if index < 0 {
-			pdIndex < 0
+			pdIndex = 0
 		} else {
 			pdIndex = index + 1
 		}

@@ -1,8 +1,9 @@
 package scheduler
 
 import (
-	"github.com/yanchenxu/Web-spider/itemProcessor"
 	"github.com/yanchenxu/Web-spider/analyzer"
+	"github.com/yanchenxu/Web-spider/base"
+	"github.com/yanchenxu/Web-spider/itemProcessor"
 	"net/http"
 )
 
@@ -10,12 +11,12 @@ import (
 type scheduler interface {
 	//启动调度器
 	Start(channelLen uint, //指定数据传输通道长度
-	poolSize uint32, //设定池的容量
-	crawlDepth uint32, //爬取深度
-	httpClientGenerator GenHttpClient, //生成行的HTTP客户端
-	respParsers []analyzer.ParseResponse, //解析HTTP响应
-	itemProcessors []ItemProcessor.ProcessItem, //条目处理序列
-	firstHttpReq *http.Request) (err error) //首次请求
+		poolSize uint32, //设定池的容量
+		crawlDepth uint32, //爬取深度
+		httpClientGenerator GenHttpClient, //生成行的HTTP客户端
+		respParsers []analyzer.ParseResponse, //解析HTTP响应
+		itemProcessors []ItemProcessor.ProcessItem, //条目处理序列
+		firstHttpReq *http.Request) (err error) //首次请求
 	//终止
 	Stop() bool
 	//半段调度器是否在运行
@@ -33,4 +34,21 @@ type SchedSummary interface {
 	String() string               //一般
 	Detail() string               //详细
 	Same(other SchedSummary) bool //与另一份是否相同
+}
+
+//请求缓存的接口类型
+
+type requestCache interface {
+	//将请求放入请求缓存
+	put(req *base.Request) bool
+	//从请求缓存获取最早被放入且仍在其中的请求
+	get() *base.Request
+	//获得请求缓存的容量
+	capacity() int
+	//获得请求缓存的实时长度，即其中的请求的及时数量
+	length() int
+	//关闭请求缓存
+	close()
+	//获取请求缓存的摘要信息
+	summary() string
 }
