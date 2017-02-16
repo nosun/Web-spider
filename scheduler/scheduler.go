@@ -47,10 +47,6 @@ func NewScheduler() scheduler {
 	return &myScheduler{}
 }
 
-func NewSchedSummary(sched *myScheduler, prefix string) SchedSummary {
-	return nil
-}
-
 func (sched *myScheduler) Start(channelLen uint, //指定数据传输通道长度
 	poolSize uint32, //设定池的容量
 	crawlDepth uint32, //爬取深度

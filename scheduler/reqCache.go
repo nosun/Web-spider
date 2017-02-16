@@ -1,9 +1,9 @@
 package scheduler
 
 import (
+	"fmt"
 	"github.com/yanchenxu/Web-spider/base"
 	"sync"
-	"fmt"
 )
 
 type myRequestCache struct {
@@ -14,11 +14,11 @@ type myRequestCache struct {
 
 func newRequestCache() requestCache {
 	return &myRequestCache{
-		cache:make([]*base.Request, 0),
+		cache: make([]*base.Request, 0),
 	}
 }
 
-func (reqCache *myRequestCache)put(req *base.Request) bool {
+func (reqCache *myRequestCache) put(req *base.Request) bool {
 	if req == nil {
 		return false
 	}
@@ -35,7 +35,7 @@ func (reqCache *myRequestCache)put(req *base.Request) bool {
 	return true
 }
 
-func (reqCache *myRequestCache)get() *base.Request {
+func (reqCache *myRequestCache) get() *base.Request {
 	if reqCache.length() == 0 {
 		return nil
 	}
@@ -51,15 +51,15 @@ func (reqCache *myRequestCache)get() *base.Request {
 	return req
 }
 
-func (reqCache *myRequestCache)capacity() int {
+func (reqCache *myRequestCache) capacity() int {
 	return cap(reqCache.cache)
 }
 
-func (reqCache *myRequestCache)length() int {
+func (reqCache *myRequestCache) length() int {
 	return len(reqCache.cache)
 }
 
-func (reqCache *myRequestCache)close() {
+func (reqCache *myRequestCache) close() {
 	if reqCache.status == 1 {
 		return
 	}
@@ -68,13 +68,13 @@ func (reqCache *myRequestCache)close() {
 
 //摘要信息模板
 var summaryTemplate = "status: %s," + "length: %d," + "capacity: %d"
+
 //状态字典
 var statusMap = map[byte]string{
-	0:"running",
-	1:"closed",
+	0: "running",
+	1: "closed",
 }
 
-func (reqCache *myRequestCache)summary() string {
+func (reqCache *myRequestCache) summary() string {
 	return fmt.Sprintf(summaryTemplate, statusMap[reqCache.status], reqCache.length(), reqCache.capacity())
 }
-
