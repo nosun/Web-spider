@@ -3,14 +3,15 @@ package scheduler
 import (
 	"bytes"
 	"fmt"
+	"github.com/yanchenxu/Web-spider/base"
 )
 
 type mySchedSummary struct {
-	prefix     string //前缀
-	running    uint32 //运行标记
-	poolSize   uint32 //池大小
-	channelLen uint   //通道总长度
-	crawlDepth uint32 //爬取最大深度
+	prefix       string            //前缀
+	running      uint32            //运行标记
+	channelArgs  base.ChannelArgs  //通道参数容器
+	poolBaseArgs base.PoolBaseArgs //池基本参数容器
+	crawlDepth   uint32            //爬取最大深度
 
 	chanmanSummary      string // 通道管理器的摘要信息
 	reqCacheSummary     string // 请求缓存的摘要信息
@@ -47,11 +48,11 @@ func NewSchedSummary(sched *myScheduler, prefix string) SchedSummary {
 		urlDetail = "\n"
 	}
 	return &mySchedSummary{
-		prefix:     prefix,
-		running:    sched.running,
-		poolSize:   sched.poolSize,
-		channelLen: sched.channelLen,
-		crawlDepth: sched.crawlDepth,
+		prefix:       prefix,
+		running:      sched.running,
+		channelArgs:  sched.channelArgs,
+		poolBaseArgs: sched.poolBaseArgs,
+		crawlDepth:   sched.crawlDepth,
 
 		chanmanSummary:      sched.chanman.Summary(),
 		reqCacheSummary:     sched.reqCache.summary(),
@@ -85,8 +86,8 @@ func (ss *mySchedSummary) Same(other SchedSummary) bool {
 		return false
 	}
 	if ss.running != otherSs.running ||
-		ss.poolSize != otherSs.poolSize ||
-		ss.channelLen != otherSs.channelLen ||
+		ss.channelArgs != otherSs.channelArgs ||
+		ss.poolBaseArgs != otherSs.poolBaseArgs ||
 		ss.crawlDepth != otherSs.crawlDepth ||
 
 		ss.dlPoolLen != otherSs.dlPoolLen ||
@@ -110,8 +111,8 @@ func (ss *mySchedSummary) Same(other SchedSummary) bool {
 func (ss *mySchedSummary) getSummary(detail bool) string {
 	prefix := ss.prefix
 	template := prefix + "Running: %v \n" +
-		prefix + "Pool size: %d \n" +
-		prefix + "Channel length: %d \n" +
+		prefix + "poolBaseArgs: %d \n" +
+		prefix + "channelArgs: %d \n" +
 		prefix + "Crawl depth: %d \n" +
 		prefix + "Channels manager: %s \n" +
 		prefix + "Request cache: %s\n" +
@@ -124,8 +125,8 @@ func (ss *mySchedSummary) getSummary(detail bool) string {
 	return fmt.Sprintf(template,
 		func() bool {
 			return ss.running == 1
-		}(), ss.poolSize,
-		ss.channelLen,
+		}(), ss.poolBaseArgs,
+		ss.channelArgs,
 		ss.crawlDepth,
 		ss.chanmanSummary,
 		ss.reqCacheSummary,

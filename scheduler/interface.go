@@ -10,8 +10,8 @@ import (
 //调度器的接口
 type scheduler interface {
 	//启动调度器
-	Start(channelLen uint, //指定数据传输通道长度
-		poolSize uint32, //设定池的容量
+	Start(channelArgs base.ChannelArgs, //通道参数容器
+		poolBaseSize base.PoolBaseArgs, //池基本参数容器
 		crawlDepth uint32, //爬取深度
 		httpClientGenerator GenHttpClient, //生成行的HTTP客户端
 		respParsers []analyzer.ParseResponse, //解析HTTP响应

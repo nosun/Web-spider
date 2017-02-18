@@ -18,10 +18,10 @@ import (
 type GenHttpClient func() *http.Client
 
 type myScheduler struct {
-	poolSize      uint32 //池的尺寸
-	channelLen    uint   //通道的总长度
-	crawlDepth    uint32 //爬取最大深度
-	primaryDomain string //主域名
+	channelArgs   base.ChannelArgs  //通道参数容器
+	poolBaseArgs  base.PoolBaseArgs //池基本参数-容器
+	crawlDepth    uint32            //爬取最大深度
+	primaryDomain string            //主域名
 
 	chanman      middleware.ChannelManager     //通道管理器
 	stopSign     middleware.StopSign           //停止信号
@@ -47,8 +47,8 @@ func NewScheduler() scheduler {
 	return &myScheduler{}
 }
 
-func (sched *myScheduler) Start(channelLen uint, //指定数据传输通道长度
-	poolSize uint32, //设定池的容量
+func (sched *myScheduler) Start(channelArgs base.ChannelArgs, //代表通道参数容器
+	poolBaseArgs base.PoolBaseArgs, //代表池基本参数的容器
 	crawlDepth uint32, //爬取深度
 	httpClientGenerator GenHttpClient, //生成行的HTTP客户端
 	respParsers []analyzer.ParseResponse, //解析HTTP响应
@@ -68,30 +68,30 @@ func (sched *myScheduler) Start(channelLen uint, //指定数据传输通道长�
 
 	atomic.StoreUint32(&sched.running, 1)
 
-	if channelLen == 0 {
-		return errors.New("The channel max length (capacity) can not be 0!\n")
+	if err := channelArgs.Check(); err != nil {
+		return err
 	}
-	sched.channelLen = channelLen
+	sched.channelArgs = channelArgs
 
-	if poolSize == 0 {
-		return errors.New("The pool size can not be of 0!\n")
+	if err := poolBaseArgs.Check(); err != nil {
+		return err
 	}
-	sched.poolSize = poolSize
+	sched.poolBaseArgs = poolBaseArgs
 	sched.crawlDepth = crawlDepth
 
-	sched.chanman = generateChannelManager(sched.channelLen)
+	sched.chanman = generateChannelManager(sched.channelArgs)
 
 	if httpClientGenerator == nil {
 		return errors.New("The HTTP client generator list is invalid!")
 	}
 
-	dlpool, err := generatePageDownloaderPool(sched.poolSize, httpClientGenerator)
+	dlpool, err := generatePageDownloaderPool(sched.poolBaseArgs, httpClientGenerator)
 	if err != nil {
 		return fmt.Errorf("Occur error when get page downloader pool: %s\n", err)
 	}
 	sched.dlpool = dlpool
 
-	analyzerPool, err := generateAnalyzerPool(sched.poolSize)
+	analyzerPool, err := generateAnalyzerPool(sched.poolBaseArgs)
 	if err != nil {
 		return fmt.Errorf("Occur error when get page analyzer pool: %s\n", err)
 	}

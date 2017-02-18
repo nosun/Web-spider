@@ -12,7 +12,7 @@ type IDGenertor interface {
 //通道管理器接口
 type ChannelManager interface {
 	//初始化
-	Init(channelLen uint, rest bool) bool
+	Init(channelArgs base.ChannelArgs, rest bool) bool
 	//关闭管道
 	Close() bool
 	//获取请求传输通道
@@ -23,8 +23,6 @@ type ChannelManager interface {
 	ItemChan() (chan base.Item, error)
 	//错误
 	ErrChan() (chan error, error)
-	//通道长度
-	ChannelLen() uint
 	//管理器状态
 	Status() ChannelManagerStatus
 	//摘要信息

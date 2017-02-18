@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/yanchenxu/Web-spider/analyzer"
+	"github.com/yanchenxu/Web-spider/base"
 	"github.com/yanchenxu/Web-spider/downloader"
 	"github.com/yanchenxu/Web-spider/itemProcessor"
 	"github.com/yanchenxu/Web-spider/middleware"
@@ -11,18 +12,18 @@ import (
 	"strings"
 )
 
-func generateChannelManager(chnnellen uint) middleware.ChannelManager {
-	return middleware.NewChannelManager(chnnellen)
+func generateChannelManager(chnnelArgs base.ChannelArgs) middleware.ChannelManager {
+	return middleware.NewChannelManager(chnnelArgs)
 }
 
-func generatePageDownloaderPool(poolSize uint32, genClient GenHttpClient) (Downloader.PageDownloaderPool, error) {
-	return Downloader.NewPageDownloaderPool(poolSize, func() Downloader.PageDownloader {
+func generatePageDownloaderPool(poolBaseArgs base.PoolBaseArgs, genClient GenHttpClient) (Downloader.PageDownloaderPool, error) {
+	return Downloader.NewPageDownloaderPool(poolBaseArgs.PageDownloaderPoolSize(), func() Downloader.PageDownloader {
 		return Downloader.NewDownloder(genClient())
 	})
 }
 
-func generateAnalyzerPool(poolSize uint32) (analyzer.AnalyzerPool, error) {
-	return analyzer.NewAnalyzerPool(poolSize, analyzer.NewAnalyzer)
+func generateAnalyzerPool(poolBaseArgs base.PoolBaseArgs) (analyzer.AnalyzerPool, error) {
+	return analyzer.NewAnalyzerPool(poolBaseArgs.AnalyzerPoolSize(), analyzer.NewAnalyzer)
 }
 
 func generateItemPipeline(itemProcessors []ItemProcessor.ProcessItem) ItemProcessor.ItemPipeline {

@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"errors"
 	"fmt"
 	"github.com/yanchenxu/Web-spider/base"
 	"sync"
@@ -32,38 +31,35 @@ var chanmanSummaryTemplate = "status" +
 const defaultChanlen uint = 10
 
 type myChannelManager struct {
-	channelLen uint
-	reqCh      chan base.Request
-	respCh     chan base.Response
-	itemCh     chan base.Item
-	errCh      chan error
-	status     ChannelManagerStatus
-	rwmutex    sync.RWMutex //读写锁
+	channelAgrs base.ChannelArgs
+	reqCh       chan base.Request
+	respCh      chan base.Response
+	itemCh      chan base.Item
+	errCh       chan error
+	status      ChannelManagerStatus
+	rwmutex     sync.RWMutex //读写锁
 }
 
-func NewChannelManager(channelLen uint) ChannelManager {
-	if channelLen == 0 {
-		channelLen = defaultChanlen
-	}
+func NewChannelManager(channelArgs base.ChannelArgs) ChannelManager {
 	chanman := &myChannelManager{}
-	chanman.Init(channelLen, true)
+	chanman.Init(channelArgs, true)
 	return chanman
 }
 
-func (chanman *myChannelManager) Init(channelLen uint, rest bool) bool {
-	if channelLen == 0 {
-		panic(errors.New("The channel length is invalid!"))
+func (chanman *myChannelManager) Init(channelArgs base.ChannelArgs, rest bool) bool {
+	if err := channelArgs.Check(); err != nil {
+		panic(err)
 	}
 	chanman.rwmutex.Lock()
 	defer chanman.rwmutex.Unlock()
 	if chanman.status == CHANNEL_MANAGER_STATUS_INITIALIZED && !rest {
 		return false
 	}
-	chanman.channelLen = channelLen
-	chanman.reqCh = make(chan base.Request, channelLen)
-	chanman.respCh = make(chan base.Response, channelLen)
-	chanman.itemCh = make(chan base.Item, channelLen)
-	chanman.errCh = make(chan error, channelLen)
+	chanman.channelAgrs = channelArgs
+	chanman.reqCh = make(chan base.Request, chanman.channelAgrs.ReqChanLen())
+	chanman.respCh = make(chan base.Response, chanman.channelAgrs.RespChanLen())
+	chanman.itemCh = make(chan base.Item, chanman.channelAgrs.ItemChanLen())
+	chanman.errCh = make(chan error, chanman.channelAgrs.ErrorChanLen())
 	chanman.status = CHANNEL_MANAGER_STATUS_INITIALIZED
 	return true
 }
@@ -120,10 +116,6 @@ func (chanman *myChannelManager) ErrChan() (chan error, error) {
 		return nil, err
 	}
 	return chanman.errCh, nil
-}
-
-func (chanman *myChannelManager) ChannelLen() uint {
-	return chanman.channelLen
 }
 
 //管理器状态
