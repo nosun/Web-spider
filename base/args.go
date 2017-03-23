@@ -13,8 +13,8 @@ type ChannelArgs struct {
 	description  string //描述
 }
 
-func NewChannelArgs(reqCL uint, respCL uint, itemCL uint, errorCL uint) Args {
-	return &ChannelArgs{reqChanLen: reqCL,
+func NewChannelArgs(reqCL uint, respCL uint, itemCL uint, errorCL uint) ChannelArgs {
+	return ChannelArgs{reqChanLen: reqCL,
 		respChanLen:  respCL,
 		itemChanLen:  itemCL,
 		errorChanLen: errorCL,
@@ -64,8 +64,8 @@ type PoolBaseArgs struct {
 	description            string //描述
 }
 
-func NewPoolBaseArgs(pdpSize uint32, apSize uint32) Args {
-	return &PoolBaseArgs{pageDownloaderPoolSize: pdpSize,
+func NewPoolBaseArgs(pdpSize uint32, apSize uint32) PoolBaseArgs {
+	return PoolBaseArgs{pageDownloaderPoolSize: pdpSize,
 		analyzerPoolSize: apSize,
 		description:      fmt.Sprintf("pageDownloaderPoolSize: %d\n,analyzerPoolSize: %d\n", pdpSize, apSize)}
 }

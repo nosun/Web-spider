@@ -3,8 +3,9 @@ package ItemProcessor
 import (
 	"errors"
 	"fmt"
-	"github.com/yanchenxu/Web-spider/base"
 	"sync/atomic"
+
+	"github.com/yanchenxu/Web-spider/base"
 )
 
 //被用来处理条目的函数类型
@@ -89,7 +90,7 @@ func (ip *myItemPipeline) ProcessingNumber() uint64 {
 var summaryTemplate = "failFast :%v,processorNumber:%d," +
 	"set: %d,accepted: %d,processed: %d,processing: %d"
 
-//获取摘要星系
+//获取摘要信息
 func (ip *myItemPipeline) Summary() string {
 	counts := ip.Count()
 	summary := fmt.Sprintf(summaryTemplate, ip.failFast, len(ip.itemProcessors), counts[0], counts[1], counts[2], ip.ProcessingNumber())

@@ -1,10 +1,11 @@
 package scheduler
 
 import (
+	"net/http"
+
 	"github.com/yanchenxu/Web-spider/analyzer"
 	"github.com/yanchenxu/Web-spider/base"
 	"github.com/yanchenxu/Web-spider/itemProcessor"
-	"net/http"
 )
 
 //调度器的接口

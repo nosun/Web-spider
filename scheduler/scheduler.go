@@ -3,16 +3,17 @@ package scheduler
 import (
 	"errors"
 	"fmt"
-	"github.com/yanchenxu/Web-spider/analyzer"
-	"github.com/yanchenxu/Web-spider/base"
-	"github.com/yanchenxu/Web-spider/downloader"
-	"github.com/yanchenxu/Web-spider/itemProcessor"
-	"github.com/yanchenxu/Web-spider/middleware"
 	"log"
 	"net/http"
 	"strings"
 	"sync/atomic"
 	"time"
+
+	"github.com/yanchenxu/Web-spider/analyzer"
+	"github.com/yanchenxu/Web-spider/base"
+	"github.com/yanchenxu/Web-spider/downloader"
+	"github.com/yanchenxu/Web-spider/itemProcessor"
+	"github.com/yanchenxu/Web-spider/middleware"
 )
 
 type GenHttpClient func() *http.Client
@@ -145,7 +146,6 @@ func (sched *myScheduler) startDownloading() {
 			}
 			go sched.download(req)
 		}
-
 	}()
 }
 
