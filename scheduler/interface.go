@@ -9,7 +9,7 @@ import (
 )
 
 //调度器的接口
-type scheduler interface {
+type Scheduler interface {
 	//启动调度器
 	Start(channelArgs base.ChannelArgs, //通道参数容器
 		poolBaseSize base.PoolBaseArgs, //池基本参数容器

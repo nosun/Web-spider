@@ -17,9 +17,10 @@ import (
 	"github.com/yanchenxu/Web-spider/base"
 	"github.com/yanchenxu/Web-spider/itemProcessor"
 	"github.com/yanchenxu/Web-spider/scheduler"
+	"github.com/yanchenxu/Web-spider/tool"
 )
 
-func genHttpClient() *http.Client {
+func genHTTPClient() *http.Client {
 	return &http.Client{}
 }
 
@@ -36,7 +37,7 @@ func parseForAtag(httpResp *http.Response, respDepth uint32) ([]base.Data, []err
 		return nil, []error{err}
 	}
 
-	var reqUrl *url.URL = httpResp.Request.URL
+	var reqURL *url.URL = httpResp.Request.URL
 	var httpRespBody io.ReadCloser = httpResp.Body
 	defer func() {
 		if httpRespBody != nil {
@@ -66,15 +67,15 @@ func parseForAtag(httpResp *http.Response, respDepth uint32) ([]base.Data, []err
 		//todo 对javascript代码的解析
 
 		if href != "" && !strings.HasPrefix(lowerHref, "javascript") {
-			aUrl, err := url.Parse(href)
+			aURL, err := url.Parse(href)
 			if err != nil {
 				errs = append(errs, err)
 				return
 			}
-			if !aUrl.IsAbs() {
-				aUrl = reqUrl.ResolveReference(aUrl)
+			if !aURL.IsAbs() {
+				aURL = reqURL.ResolveReference(aURL)
 			}
-			httpreq, err := http.NewRequest("GET", aUrl.String(), nil)
+			httpreq, err := http.NewRequest("GET", aURL.String(), nil)
 			if err != nil {
 				errs = append(errs, err)
 			} else {
@@ -86,7 +87,7 @@ func parseForAtag(httpResp *http.Response, respDepth uint32) ([]base.Data, []err
 		if text != "" {
 			imap := make(map[string]interface{})
 			imap["a.text"] = text
-			imap["parent_url"] = reqUrl
+			imap["parent_url"] = reqURL
 			item := base.Item(imap)
 			dataList = append(dataList, &item)
 		}
@@ -96,7 +97,7 @@ func parseForAtag(httpResp *http.Response, respDepth uint32) ([]base.Data, []err
 
 func processItem(item base.Item) (result base.Item, err error) {
 	if item == nil {
-		return nil, errors.New("Invaild item!")
+		return nil, errors.New("Invaild item")
 	}
 
 	//生成结果
@@ -123,17 +124,28 @@ func main() {
 	channelArgs := base.NewChannelArgs(10, 10, 10, 10)
 	poolBaseArgs := base.NewPoolBaseArgs(3, 3)
 	crawlDepth := uint32(1)
-	httpClientGenerator := genHttpClient
+	httpClientGenerator := genHTTPClient
 	respParsers := getResponseParsers()
 	itemProcessors := getItemProcessors()
-	startUrl := "http//www.sogou.com"
-	firstHttpReq, err := http.NewRequest("GET", startUrl, nil)
+	startURL := "http//www.sogou.com"
+	firstHTTPReq, err := http.NewRequest("GET", startURL, nil)
 	if err != nil {
 		log.Fatalln(err)
 		return
 	}
 
 	scheduler := scheduler.NewScheduler()
+
+	//准备监控参数
+	intervalNs := 10 * time.Millisecond
+	maxIdleCont := uint(1000)
+	checkCountChan := tool.Monitoring(
+		scheduler,
+		intervalNs,
+		maxIdleCont,
+		true,
+		false,
+	)
 
 	//启动
 	scheduler.Start(channelArgs,
@@ -142,6 +154,6 @@ func main() {
 		httpClientGenerator,
 		respParsers,
 		itemProcessors,
-		firstHttpReq)
+		firstHTTPReq)
 
 }

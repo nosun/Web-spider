@@ -44,7 +44,7 @@ const (
 	SCHEDULER_CODE    = "scheduler"
 )
 
-func NewScheduler() scheduler {
+func NewScheduler() Scheduler {
 	return &myScheduler{}
 }
 
